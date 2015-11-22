@@ -51,16 +51,8 @@ module SeaMule
     end
   end
 
-  def redis_id
-    @redis_id
-  end
-
   def coder
     @coder ||= JsonEncoder.new
-  end
-
-  def to_s
-    "Resque Backend connected to #{redis_id}"
   end
 
   def push(queue, item)
@@ -95,49 +87,19 @@ module SeaMule
   end
 
   def enqueue(klass, payload, meta = nil)
-    enqueue_to(queue_from_class(klass), klass, payload, meta)
+    enqueue_to(DEFAULT_QUEUE, klass, payload, meta)
   end
 
   def enqueue_to(queue, klass, payload, meta)
-    validate(klass, queue)
     Job.create(queue, klass, payload, meta)
   end
 
-  def dequeue(klass, *args)
-    Job.destroy(queue_from_class(klass), klass, *args)
+  def dequeue(queue, klass: nil, payload: nil, id: nil)
+    Job.destroy(queue, klass: klass, payload: payload, id: id)
   end
 
-  def queued(klass, *args)
-    Job.queued(queue_from_class(klass), klass, *args)
-  end
-
-  def queue_from_class(klass)
-    DEFAULT_QUEUE
-  end
-
-  def validate(klass, queue = nil)
-    queue ||= queue_from_class(klass)
-
-    unless queue
-      raise NoQueueError.new("Jobs must be placed onto a queue. No queue could be inferred for class #{klass}")
-    end
-
-    if klass.to_s.empty?
-      raise NoClassError.new("Jobs must be given a class.")
-    end
-  end
-
-  def info
-    {
-        :pending => pending_queues,
-        :processed => Stat[:processed],
-        :failed => failed_job_count,
-        :servers => [redis_id]
-    }
-  end
-
-  def pending_queues
-    queues.inject(0) { |m, k| m + size(k) }
+  def queued(queue, klass: nil, payload: nil, id: nil)
+    Job.queued(queue, klass: klass, payload: payload, id: id)
   end
 
   def keys

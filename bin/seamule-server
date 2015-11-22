@@ -17,10 +17,10 @@ Vegas::Runner.new(SeaMule::Server, 'seamule-server', {
 }) do |runner, opts, app|
   opts.on('-N NAMESPACE', "--namespace NAMESPACE", "set the Redis namespace") {|namespace|
     runner.logger.info "Using Redis namespace '#{namespace}'"
-    Resque.redis.namespace = namespace
+    SeaMule.redis.namespace = namespace
   }
   opts.on('-r redis-connection', "--redis redis-connection", "set the Redis connection string") {|redis_conf|
     runner.logger.info "Using Redis connection '#{redis_conf}'"
-    Resque.redis = redis_conf
+    SeaMule.redis = redis_conf
   }
 end

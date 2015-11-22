@@ -23,8 +23,6 @@ module SeaMule
     end
 
     def self.create(queue, klass, payload, meta)
-      SeaMule.validate(klass, queue)
-      puts payload.inspect
       SeaMule.push(queue, class: klass.to_s, payload: payload, meta: meta, id: SecureRandom.hex)
     end
 
@@ -53,12 +51,6 @@ module SeaMule
       jobs
     end
 
-    def self.reserve(queue)
-      if payload = SeaMule.pop(queue)
-        new(queue, payload)
-      end
-    end
-
     def perform
       object = callback_class.new
       object.perform(id, meta, payload, result)
@@ -76,19 +68,16 @@ module SeaMule
       }
     end
 
-    def recreate
-      self.class.create(queue, callback_class, payload, meta)
-    end
-
     def inspect
-      "(Job{#{@queue}} | #{@callback_class_name} | #{@meta.inspect} | #{@payload.inspect})"
+      "Job @#{@queue} | #{@callback_class_name} | #{@meta.inspect} | #{@payload.inspect}"
     end
 
 
     def ==(other)
       queue == other.queue &&
           callback_class == other.callback_class &&
-          args == other.args
+          meta == other.meta &&
+          payload == other.payload
     end
 
     protected
@@ -115,6 +104,5 @@ module SeaMule
     def self.push_queue(redis, requeue_queue, queue)
       loop { redis.rpoplpush(requeue_queue, queue) or break }
     end
-
   end
 end

@@ -3,7 +3,6 @@ require 'multi_json'
 
 module SeaMule
   class JsonEncoder < Encoder
-
     def encode(object)
       JSON.dump(object)
     end

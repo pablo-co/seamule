@@ -2,9 +2,9 @@ require 'redis-namespace'
 
 module SeaMule
   class Backend
-    ConnectionError = Class.new(StandardError)
+    attr_reader :store
 
-    attr_reader :store, :logger
+    attr_reader :logger
 
     def initialize(store, logger)
       @store = store
@@ -12,15 +12,19 @@ module SeaMule
     end
 
     def self.connect(server)
-      if server.is_a?(Hash)
-        Redis::Namespace.new(:seamule, redis: Redis.new(server))
-      else
-        raise ArgumentError, "Invalid Server: #{server.inspect}"
+      case server
+        when String
+          redis = connect_to(server)
+          Redis::Namespace.new(:seamule, redis: redis)
+        when Hash
+          Redis::Namespace.new(:seamule, redis: Redis.new(server))
+        else
+          raise ArgumentError, "Invalid Server: #{server.inspect}"
       end
     end
 
     def self.connect_to(server)
-      Redis::Namespace.connect(url: server, :thread_safe => true)
+      Redis.connect(url: server, :thread_safe => true)
     end
 
     MAX_RECONNECT_ATTEMPTS = 3

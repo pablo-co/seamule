@@ -35,9 +35,11 @@ module SeaMule
     patch '/jobs/:id.json' do
       job = SeaMule.queued(:active, id: params[:id]).first
       if job
-        SeaMule.destroy(:active, id: params[:id])
+        job.result = read_json
+        SeaMule.dequeue(:active, id: params[:id])
         SeaMule.push(:done, job)
-        render_json(job)
+        render_json(params.to_json)
+        job.perform
       else
         unprocessable_entity
       end
@@ -49,6 +51,10 @@ module SeaMule
 
     def unprocessable_entity
       status 422
+    end
+
+    def read_json
+      JSON.parse(request.env['rack.input'].read)
     end
   end
 end
